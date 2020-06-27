@@ -1,0 +1,111 @@
+---
+title: "Project week 2 course Reproducible Research"
+author: "Jessica Quintero López"
+date: "2/3/2020"
+output: 
+  html_document:
+    toc: true
+    toc_float:
+      collapsed: false
+      smooth_scroll: false
+    code_folding: hide
+    theme: sandstone
+  
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## <font color ="green">**Reading Data**</font> 
+
+```{r}
+data <- read.csv('activity.csv', sep=",")
+```
+
+## <font color ="green">**Histogram of the total number of steps taken each day**</font> 
+
+```{r, message=FALSE, warning=FALSE}
+library(tidyverse)
+steps <- na.omit(data %>% group_by(as.Date(date)) %>% summarise(sum(steps)))
+colnames(steps) <- c("Date","Steps")
+hist(steps$Steps, col="darkblue",border = "darkblue", main="Number of steps taken each day",
+     xlab = "Steps", breaks=12)
+```
+
+##  <font color ="green">**Mean and median number of steps taken each day**</font> {.tabset}
+
+###  <font color ="green">**Mean number of steps taken each day**</font>
+
+```{r}
+mean_steps <- mean(na.omit(steps$Steps))
+mean_steps
+```
+###  <font color ="green">**Median number of steps taken each day**</font>
+
+```{r}
+median_steps <- median(na.omit(steps$Steps))
+median_steps
+```
+## <font color ="green">**Time series plot of the average number of steps taken**</font> 
+
+```{r,message=FALSE, warning=FALSE}
+library(tidyverse)
+s_time <- na.omit(data %>% group_by(as.Date(date)) %>% summarise(mean(steps)))
+colnames(s_time) <- c("Date","MeanSteps")
+```
+
+```{r}
+plot(s_time$Date,s_time$MeanSteps, type="l", col="red",
+     xlab="Time", ylab="Steps", main="Time series plot of the average number of steps taken")
+```
+
+## <font color ="green">**The 5-minute interval that, on average, contains the maximum number of steps**</font> 
+
+
+```{r, message=FALSE, warning=FALSE}
+library(tidyverse)
+s_time <- na.omit(data %>% group_by(as.Date(date)) %>% summarise(mean(steps)))
+colnames(s_time) <- c("Date","MeanSteps")
+interval_row <- which.max(s_time$MeanSteps)
+max_interval <- s_time[interval_row,2]
+max_interval
+```
+
+
+## <font color ="green">**Code to describe and show a strategy for imputing missing data**</font> 
+
+```{r, message=FALSE, warning=FALSE}
+library(modeest)
+data$steps[is.na(data$steps)] <- mlv(data$steps, method = "mfv")[1]
+head(data)
+sum(is.na(data))
+```
+
+## <font color ="green">**Histogram of the total number of steps taken each day after missing values are imputed**</font> 
+
+```{r}
+hist(data$steps, col="purple",border = "purple", main="Number of steps taken each day",
+     xlab = "Steps")
+```
+## <font color="green> **Panel plot comparing the average number of steps taken per 5-minute interval across weekdays and weekends** </font>
+
+```{r}
+data$date <- as.Date(data$date)
+data$weekday <- weekdays(data$date)
+data$day_type <- ifelse(data$weekday=="sábado" |
+                                           data$weekday=="domingo","Weekend","Weekday")
+data$day_type <- factor(data$day_type)
+```
+
+```{r}
+day_t<- aggregate(steps ~ interval + day_type, data=data, mean)
+library(ggplot2)
+ggplot(day_t, aes(interval, steps)) + 
+        geom_line() + 
+        facet_grid(day_type ~ .) +
+        xlab("5-minute intervals") + 
+        ylab("Avarage number of steps taken") +
+        ggtitle("Weekdays and weekends activity patterns")
+```
+
